@@ -1,0 +1,2 @@
+### Graylog Journal Corruption
+NOIMPL

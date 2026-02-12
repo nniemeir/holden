@@ -2,7 +2,9 @@
 ⚠ **Early in development**
 
 A personal computer monitoring stack using:
+* Alertmanager
 * Grafana
+* Graylog
 * Prometheus
 * Node Exporter
 

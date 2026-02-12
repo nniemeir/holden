@@ -1,0 +1,24 @@
+groups:
+  - name: system_alerts
+    rules:
+      # Alert if CPU usage exceeds 80% for 5 minutes
+      - alert: HighCpuUsage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m  # Alert only if condition holds for 5 minutes
+        labels:
+          severity: "warning"
+          job: "node-exporter"
+        annotations:
+          summary: "High CPU usage detected"
+          description: "Instance {{ $labels.instance }} has high CPU usage ({{ $value | humanizePercentage }}) for 5 minutes."
+ 
+      # Alert if available memory drops below 20%
+      - alert: LowMemory
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 < 20
+        for: 5m
+        labels:
+          severity: "critical"
+          job: "node-exporter"
+        annotations:
+          summary: "Low memory available"
+          description: "Instance {{ $labels.instance }} has low memory ({{ $value | humanizePercentage }} available) for 5 minutes."

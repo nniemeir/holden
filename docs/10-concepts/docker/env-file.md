@@ -1,0 +1,2 @@
+### .env file
+Docker looks for environment variables for its compose scripts in a file named .env in the same directory as docker-compose.yml. Many amateur projects use this file to store secrets, but this is discouraged by Docker since it is a plaintext file. Instead, you should use Docker Secrets or an external secrets manager like Doppler.
