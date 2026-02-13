@@ -14,11 +14,6 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     networks:
       - host-monitoring
-    deploy:
-      resources:
-        limits:
-          cpus: 0.5
-          memory: 512M
 
   prometheus:
     image: prom/prometheus:latest
@@ -33,17 +28,10 @@ services:
       - --web.console.libraries=/etc/prometheus/console_libraries
       - --web.console.templates=/etc/prometheus/consoles
       - --web.enable-lifecycle
-    expose:
-      - 9090
     ports:
       - 9090:9090
     networks:
       - host-monitoring
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 2G
 
   node-exporter:
     image: prom/node-exporter:latest
@@ -62,14 +50,10 @@ services:
       - 9100:9100
     networks:
       - host-monitoring
-    deploy:
-      resources:
-        limits:
-          cpus: 0.2
-          memory: 100M
 
   alertmanager:
     image: prom/alertmanager:latest
+    container_name: alertmanager
     restart: unless-stopped
     ports:
       - "9093:9093"
@@ -77,11 +61,6 @@ services:
       - "./alertmanager:/config"
       - alertmanager-data:/data
     command: --config.file=/config/alertmanager.yml --log.level=debug
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 512M
 
   mongodb:
     image: "mongo:7.0"
@@ -91,11 +70,6 @@ services:
     volumes:
       - "mongodb_data:/data/db"
       - "mongodb_config:/data/configdb"
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 2G
 
   # For DataNode setup, graylog starts with a preflight UI, this is a change from just using OpenSearch/Elasticsearch.
   # Please take a look at the README at the top of this repo or the regular docs for more info.
@@ -105,6 +79,7 @@ services:
   # sudo sysctl -p
   datanode:
     image: "${DATANODE_IMAGE:-graylog/graylog-datanode:7.0}"
+    container_name: datanode
     hostname: "datanode"
     environment:
       GRAYLOG_DATANODE_NODE_ID_FILE: "/var/lib/graylog-datanode/node-id"
@@ -127,15 +102,11 @@ services:
     volumes:
       - "graylog-datanode:/var/lib/graylog-datanode"
     restart: "on-failure"
-    deploy:
-      resources:
-        limits:
-          cpus: "2"
-          memory: 4G
 
   graylog:
     hostname: "server"
     image: "${GRAYLOG_IMAGE:-graylog/graylog-enterprise:7.0}"
+    container_name: graylog
     depends_on:
       mongodb:
         condition: "service_started"
@@ -173,11 +144,6 @@ services:
       # See: https://github.com/Graylog2/docker-compose/issues/99#issuecomment-3800898829
       - "graylog_data:/usr/share/graylog/data"
     restart: "on-failure"
-    deploy:
-      resources:
-        limits:
-          cpus: "2"
-          memory: 4G
 
 networks:
   host-monitoring:
