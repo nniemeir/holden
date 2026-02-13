@@ -19,37 +19,37 @@ services:
     image: prom/prometheus:latest
     container_name: prometheus
     restart: unless-stopped
+    ports:
+      - 9090:9090
     volumes:
       - prometheus_data:/prometheus
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml 
+    networks:
+      - host-monitoring
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
       - --web.console.libraries=/etc/prometheus/console_libraries
       - --web.console.templates=/etc/prometheus/consoles
       - --web.enable-lifecycle
-    ports:
-      - 9090:9090
-    networks:
-      - host-monitoring
 
   node-exporter:
     image: prom/node-exporter:latest
     container_name: node-exporter
     restart: unless-stopped
+    ports:
+      - 9100:9100
     volumes:
       - /proc:/host/proc:ro 
       - /sys:/host/sys:ro 
       - /:/rootfs:ro
+    networks:
+      - host-monitoring
     command:
       - --path.procfs=/host/proc
       - --path.rootfs=/rootfs
       - --path.sysfs=/host/sys
       - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
-    ports:
-      - 9100:9100
-    networks:
-      - host-monitoring
 
   alertmanager:
     image: prom/alertmanager:latest
@@ -64,12 +64,13 @@ services:
 
   mongodb:
     image: "mongo:7.0"
+    container_name: mongodb
     restart: "on-failure"
-    networks:
-      - host-monitoring 
     volumes:
       - "mongodb_data:/data/db"
       - "mongodb_config:/data/configdb"
+    networks:
+      - host-monitoring 
 
   # For DataNode setup, graylog starts with a preflight UI, this is a change from just using OpenSearch/Elasticsearch.
   # Please take a look at the README at the top of this repo or the regular docs for more info.
@@ -80,12 +81,21 @@ services:
   datanode:
     image: "${DATANODE_IMAGE:-graylog/graylog-datanode:7.0}"
     container_name: datanode
+    restart: "on-failure"
     hostname: "datanode"
+    ports:
+      - "127.0.0.1:8999:8999/tcp"   # DataNode API
+      - "127.0.0.1:9200:9200/tcp"
+      - "127.0.0.1:9300:9300/tcp"
+    volumes:
+      - "graylog-datanode:/var/lib/graylog-datanode"
     environment:
       GRAYLOG_DATANODE_NODE_ID_FILE: "/var/lib/graylog-datanode/node-id"
       # GRAYLOG_DATANODE_PASSWORD_SECRET and GRAYLOG_PASSWORD_SECRET MUST be the same value
       GRAYLOG_DATANODE_PASSWORD_SECRET: "${GRAYLOG_PASSWORD_SECRET:?Please configure GRAYLOG_PASSWORD_SECRET in the .env file}"
       GRAYLOG_DATANODE_MONGODB_URI: "mongodb://mongodb:27017/graylog"
+    networks:
+      - host-monitoring 
     ulimits:
       memlock:
         hard: -1
@@ -93,26 +103,30 @@ services:
       nofile:
         soft: 65536
         hard: 65536
-    ports:
-      - "127.0.0.1:8999:8999/tcp"   # DataNode API
-      - "127.0.0.1:9200:9200/tcp"
-      - "127.0.0.1:9300:9300/tcp"
-    networks:
-      - host-monitoring 
-    volumes:
-      - "graylog-datanode:/var/lib/graylog-datanode"
-    restart: "on-failure"
 
   graylog:
-    hostname: "server"
     image: "${GRAYLOG_IMAGE:-graylog/graylog-enterprise:7.0}"
     container_name: graylog
-    depends_on:
-      mongodb:
-        condition: "service_started"
-      datanode:
-        condition: "service_started"
-    entrypoint: "/usr/bin/tini --  /docker-entrypoint.sh"
+    hostname: "server"
+    restart: "on-failure"
+    ports:
+      - "127.0.0.1:5044:5044/tcp"   # Beats
+      - "127.0.0.1:5140:5140/tcp"   # Syslog TCP
+      - "127.0.0.1:5140:5140/udp"   # Syslog UDP
+      - "127.0.0.1:5555:5555/tcp"   # RAW TCP
+      - "127.0.0.1:5555:5555/udp"   # RAW UDP
+      - "127.0.0.1:9000:9000/tcp"   # Server API
+      - "127.0.0.1:12201:12201/tcp" # GELF TCP
+      - "127.0.0.1:12201:12201/udp" # GELF UDP
+      #- "127.0.0.1:10000:10000/tcp" # Custom TCP port
+      #- "127.0.0.1:10000:10000/udp" # Custom UDP port
+      - "127.0.0.1:13301:13301/tcp" # Forwarder data
+      - "127.0.0.1:13302:13302/tcp" # Forwarder config
+    volumes:
+      # IMPORTANT: bind mounts (e.g., "./data:/usr/share/graylog/data") currently
+      # don't work correctly. You have to use volume mounts.
+      # See: https://github.com/Graylog2/docker-compose/issues/99#issuecomment-3800898829
+      - "graylog_data:/usr/share/graylog/data"
     environment:
       GRAYLOG_NODE_ID_FILE: "/usr/share/graylog/data/data/node-id"
       # GRAYLOG_DATANODE_PASSWORD_SECRET and GRAYLOG_PASSWORD_SECRET MUST be the same value
@@ -123,27 +137,14 @@ services:
       GRAYLOG_MONGODB_URI: "mongodb://mongodb:27017/graylog"
       # To make reporting (headless_shell) work inside a Docker container
       GRAYLOG_REPORT_DISABLE_SANDBOX: "true"
-    ports:
-    - "127.0.0.1:5044:5044/tcp"   # Beats
-    - "127.0.0.1:5140:5140/tcp"   # Syslog TCP
-    - "127.0.0.1:5140:5140/udp"   # Syslog UDP
-    - "127.0.0.1:5555:5555/tcp"   # RAW TCP
-    - "127.0.0.1:5555:5555/udp"   # RAW UDP
-    - "127.0.0.1:9000:9000/tcp"   # Server API
-    - "127.0.0.1:12201:12201/tcp" # GELF TCP
-    - "127.0.0.1:12201:12201/udp" # GELF UDP
-    #- "127.0.0.1:10000:10000/tcp" # Custom TCP port
-    #- "127.0.0.1:10000:10000/udp" # Custom UDP port
-    - "127.0.0.1:13301:13301/tcp" # Forwarder data
-    - "127.0.0.1:13302:13302/tcp" # Forwarder config
     networks:
       - host-monitoring 
-    volumes:
-      # IMPORTANT: bind mounts (e.g., "./data:/usr/share/graylog/data") currently
-      # don't work correctly. You have to use volume mounts.
-      # See: https://github.com/Graylog2/docker-compose/issues/99#issuecomment-3800898829
-      - "graylog_data:/usr/share/graylog/data"
-    restart: "on-failure"
+    depends_on:
+      mongodb:
+        condition: "service_started"
+      datanode:
+        condition: "service_started"
+    entrypoint: "/usr/bin/tini --  /docker-entrypoint.sh"
 
 networks:
   host-monitoring:
