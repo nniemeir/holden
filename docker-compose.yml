@@ -9,9 +9,6 @@ services:
       - grafana_data:/var/lib/grafana
       - ./grafana/dashboards:/var/lib/grafana/dashboards
       - ./grafana/provisioning:/etc/grafana/provisioning
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
     networks:
       - host-monitoring
 
@@ -72,12 +69,6 @@ services:
     networks:
       - host-monitoring 
 
-  # For DataNode setup, graylog starts with a preflight UI, this is a change from just using OpenSearch/Elasticsearch.
-  # Please take a look at the README at the top of this repo or the regular docs for more info.
-  # Graylog Data Node: https://hub.docker.com/r/graylog/graylog-datanode
-  # ⚠️ Make sure this is set on the host before starting:
-  # echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.conf
-  # sudo sysctl -p
   datanode:
     image: "${DATANODE_IMAGE:-graylog/graylog-datanode:7.0}"
     container_name: datanode
@@ -89,11 +80,6 @@ services:
       - "127.0.0.1:9300:9300/tcp"
     volumes:
       - "graylog-datanode:/var/lib/graylog-datanode"
-    environment:
-      GRAYLOG_DATANODE_NODE_ID_FILE: "/var/lib/graylog-datanode/node-id"
-      # GRAYLOG_DATANODE_PASSWORD_SECRET and GRAYLOG_PASSWORD_SECRET MUST be the same value
-      GRAYLOG_DATANODE_PASSWORD_SECRET: "${GRAYLOG_PASSWORD_SECRET:?Please configure GRAYLOG_PASSWORD_SECRET in the .env file}"
-      GRAYLOG_DATANODE_MONGODB_URI: "mongodb://mongodb:27017/graylog"
     networks:
       - host-monitoring 
     ulimits:
@@ -118,25 +104,10 @@ services:
       - "127.0.0.1:9000:9000/tcp"   # Server API
       - "127.0.0.1:12201:12201/tcp" # GELF TCP
       - "127.0.0.1:12201:12201/udp" # GELF UDP
-      #- "127.0.0.1:10000:10000/tcp" # Custom TCP port
-      #- "127.0.0.1:10000:10000/udp" # Custom UDP port
       - "127.0.0.1:13301:13301/tcp" # Forwarder data
       - "127.0.0.1:13302:13302/tcp" # Forwarder config
     volumes:
-      # IMPORTANT: bind mounts (e.g., "./data:/usr/share/graylog/data") currently
-      # don't work correctly. You have to use volume mounts.
-      # See: https://github.com/Graylog2/docker-compose/issues/99#issuecomment-3800898829
       - "graylog_data:/usr/share/graylog/data"
-    environment:
-      GRAYLOG_NODE_ID_FILE: "/usr/share/graylog/data/data/node-id"
-      # GRAYLOG_DATANODE_PASSWORD_SECRET and GRAYLOG_PASSWORD_SECRET MUST be the same value
-      GRAYLOG_PASSWORD_SECRET: "${GRAYLOG_PASSWORD_SECRET:?Please configure GRAYLOG_PASSWORD_SECRET in the .env file}"
-      GRAYLOG_ROOT_PASSWORD_SHA2: "${GRAYLOG_ROOT_PASSWORD_SHA2:?Please configure GRAYLOG_ROOT_PASSWORD_SHA2 in the .env file}"
-      GRAYLOG_HTTP_BIND_ADDRESS: "0.0.0.0:9000"
-      GRAYLOG_HTTP_EXTERNAL_URI: "http://localhost:9000/"
-      GRAYLOG_MONGODB_URI: "mongodb://mongodb:27017/graylog"
-      # To make reporting (headless_shell) work inside a Docker container
-      GRAYLOG_REPORT_DISABLE_SANDBOX: "true"
     networks:
       - host-monitoring 
     depends_on:
