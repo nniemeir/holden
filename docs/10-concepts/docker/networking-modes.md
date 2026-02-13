@@ -1,2 +1,0 @@
-### Networking modes
-NOIMPL
