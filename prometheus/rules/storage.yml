@@ -1,0 +1,35 @@
+groups:
+  - name: storage
+    rules:
+      # Alert if storage space usage on media drive above 80% for 5 minutes
+      - alert: LowStorageSpaceMedia
+        expr: 100 * (1 - (node_filesystem_avail_bytes{mountpoint="/mnt/media"} / node_filesystem_size_bytes{mountpoint="/mnt/media"})) > 80
+        for: 5m
+        labels:
+          severity: "warning"
+          job: "node-exporter"
+        annotations:
+          summary: "Low storage space available on media drive"
+          description: "Instance {{ $labels.instance }} has low storage space available on media drive ({{ $value | humanizePercentage }}) for 5 minutes."
+
+      # Alert if storage space usage on games drive above 80% for 5 minutes
+      - alert: LowStorageSpaceGames
+        expr: 100 * (1 - (node_filesystem_avail_bytes{mountpoint="/mnt/games"} / node_filesystem_size_bytes{mountpoint="/mnt/games"})) > 80
+        for: 5m
+        labels:
+          severity: "warning"
+          job: "node-exporter"
+        annotations:
+          summary: "Low storage space available on games drive"
+          description: "Instance {{ $labels.instance }} has low storage space available on games drive ({{ $value | humanizePercentage }}) for 5 minutes."
+
+      # Alert if storage space usage on games drive above 80% for 5 minutes
+      - alert: LowStorageSpaceRoot
+        expr: 100 * (1 - (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})) > 80
+        for: 5m
+        labels:
+          severity: "warning"
+          job: "node-exporter"
+        annotations:
+          summary: "Low storage space available on root drive"
+          description: "Instance {{ $labels.instance }} has low storage space available on root drive ({{ $value | humanizePercentage }}) for 5 minutes."

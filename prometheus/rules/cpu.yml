@@ -1,0 +1,13 @@
+groups:
+  - name: cpu
+    rules:
+      # Alert if CPU usage exceeds 80% for 5 minutes
+      - alert: HighCpuUsage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 1m  # Alert only if condition holds for 5 minutes
+        labels:
+          severity: "warning"
+          job: "node-exporter"
+        annotations:
+          summary: "High CPU usage detected"
+          description: "Instance {{ $labels.instance }} has high CPU usage ({{ $value | humanizePercentage }}) for 5 minutes."

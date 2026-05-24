@@ -21,6 +21,7 @@ services:
     volumes:
       - prometheus_data:/prometheus
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml 
+      - ./prometheus/rules:/etc/prometheus/rules
     networks:
       - host-monitoring
     command:
@@ -54,6 +55,8 @@ services:
     restart: unless-stopped
     ports:
       - "9093:9093"
+    networks:
+      - host-monitoring
     volumes:
       - "./alertmanager:/config"
       - alertmanager-data:/data
@@ -80,6 +83,10 @@ services:
       - "127.0.0.1:9300:9300/tcp"
     volumes:
       - "graylog-datanode:/var/lib/graylog-datanode"
+    environment:
+      GRAYLOG_DATANODE_PASSWORD_SECRET: ${GRAYLOG_DATANODE_PASSWORD_SECRET}
+      GRAYLOG_DATANODE_MONGODB_URI: ${GRAYLOG_DATANODE_MONGODB_URI}
+      GRAYLOG_DATANODE_NODE_ID_FILE: ${GRAYLOG_DATANODE_NODE_ID_FILE}
     networks:
       - host-monitoring 
     ulimits:
@@ -108,6 +115,14 @@ services:
       - "127.0.0.1:13302:13302/tcp" # Forwarder config
     volumes:
       - "graylog_data:/usr/share/graylog/data"
+    environment:
+      GRAYLOG_PASSWORD_SECRET: ${GRAYLOG_PASSWORD_SECRET}
+      GRAYLOG_ROOT_PASSWORD_SHA2: ${GRAYLOG_ROOT_PASSWORD_SHA2}
+      GRAYLOG_HTTP_BIND_ADDRESS: ${GRAYLOG_HTTP_BIND_ADDRESS}
+      GRAYLOG_HTTP_EXTERNAL_URI: ${GRAYLOG_HTTP_EXTERNAL_URI}
+      GRAYLOG_MONGODB_URI: ${GRAYLOG_MONGODB_URI}
+      GRAYLOG_NODE_ID_FILE: ${GRAYLOG_NODE_ID_FILE}
+      GRAYLOG_REPORT_DISABLE_SANDBOX: ${GRAYLOG_REPORT_DISABLE_SANDBOX}
     networks:
       - host-monitoring 
     depends_on:

@@ -1,0 +1,24 @@
+groups:
+  - name: memory
+    rules:
+      # Alert if memory usage above 80% for 5 minutes
+      - alert: HighMemoryUsage
+        expr: 100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 80
+        for: 5m
+        labels:
+          severity: "warning"
+          job: "node-exporter"
+        annotations:
+          summary: "High swap usage"
+          description: "Instance {{ $labels.instance }} has high memory usage ({{ $value | humanizePercentage }}) for 5 minutes."
+
+      # Alert if swap usage above 80% for 1 minute
+      - alert: HighSwapUsage
+        expr: 100 * (1 - (node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes)) > 80
+        for: 1m
+        labels:
+          severity: "critical"
+          job: "node-exporter"
+        annotations:
+          summary: "High swap usage"
+          description: "Instance {{ $labels.instance }} has high swap usage ({{ $value | humanizePercentage }}) for 1 minute."

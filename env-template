@@ -1,0 +1,22 @@
+# Grafana
+GF_SECURITY_ADMIN_USER=admin
+GF_SECURITY_ADMIN_PASSWORD=admin
+
+# Graylog Secrets
+# GRAYLOG_DATANODE_PASSWORD_SECRET and GRAYLOG_PASSWORD_SECRET MUST be the same value
+GRAYLOG_PASSWORD_SECRET=
+GRAYLOG_DATANODE_PASSWORD_SECRET=
+GRAYLOG_ROOT_PASSWORD_SHA2=
+
+## Graylog Configuration
+GRAYLOG_DATANODE_MONGODB_URI=mongodb://mongodb:27017/graylog
+GRAYLOG_DATANODE_NODE_ID_FILE=/var/lib/graylog-datanode/node-id
+
+GRAYLOG_HTTP_BIND_ADDRESS=0.0.0.0:9000
+GRAYLOG_HTTP_EXTERNAL_URI=http://localhost:9000/
+
+GRAYLOG_MONGODB_URI=mongodb://mongodb:27017/graylog
+GRAYLOG_NODE_ID_FILE=/usr/share/graylog/data/data/node-id
+
+### To make reporting (headless_shell) work inside a Docker container
+GRAYLOG_REPORT_DISABLE_SANDBOX=true

@@ -7,8 +7,8 @@ route:
 receivers:
   - name: 'mail'
     email_configs:
-      - smarthost: 'smtp.gmail.com:465'
-        auth_username: 'your_mail@gmail.com'
+      - smarthost: 'smtp.gmail.com:587'
+        auth_username: ''
         auth_password: ""
-        from: 'your_mail@gmail.com'
-        to: 'some_mail@gmail.com'
+        from: ''
+        to: ''
